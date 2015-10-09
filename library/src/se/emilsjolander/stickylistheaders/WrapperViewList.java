@@ -91,6 +91,10 @@ class WrapperViewList extends ListView {
 		return -1;
 	}
 
+	public int getVerticalScrollOffset() {
+		return super.computeVerticalScrollOffset();
+	}
+
 	@Override
 	protected void dispatchDraw(Canvas canvas) {
 		positionSelectorRect();
@@ -193,4 +197,41 @@ class WrapperViewList extends ListView {
             super.layoutChildren();
         }
     }
+
+	public abstract static class OnScrollInWrapperViewListListener implements AbsListView.OnScrollListener {
+		private int mOldScrolledOffset;
+		private enum Directions {UNDEFINED,UP,DOWN}
+		private Directions mLastDirection = Directions.UNDEFINED;
+
+		public void onScrollStateChanged(AbsListView view, int scrollState) {}
+
+		public void onScroll(AbsListView pView, int pFirstVisibleItem, int pVisibleItemCount, int pTotalItemCount) {
+			if(pView instanceof WrapperViewList) {
+				int scrolledOffset = ((WrapperViewList) pView).getVerticalScrollOffset();
+				if (scrolledOffset != mOldScrolledOffset) {
+					int tYDiff = scrolledOffset - mOldScrolledOffset;
+					if(tYDiff < -2) {
+						if(mLastDirection == Directions.UP) {
+							onScrollUp(pView);
+						}
+						mLastDirection = Directions.UP;
+					}
+					else if(tYDiff > 2) {
+						if(mLastDirection == Directions.DOWN) {
+							onScrollDown(pView);
+						}
+						mLastDirection = Directions.DOWN;
+					}
+					mOldScrolledOffset = scrolledOffset;
+				}
+			}
+		}
+
+		public void resetLastDirection() {
+			mLastDirection = Directions.UNDEFINED;
+		}
+
+		public abstract void onScrollUp(AbsListView pView);
+		public abstract  void onScrollDown(AbsListView pView);
+	}
 }
